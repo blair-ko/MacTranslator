@@ -43,6 +43,17 @@ lipo -create -output "${MACOS_DIR}/${APP_NAME}" \
 rm -f "${MACOS_DIR}/${APP_NAME}_arm64" "${MACOS_DIR}/${APP_NAME}_x86_64"
 chmod +x "${MACOS_DIR}/${APP_NAME}"
 
+echo "🎨 正在產生應用程式圖示 (AppIcon.icns)..."
+swiftc -module-cache-path /tmp/swift-module-cache \
+    -target arm64-apple-macosx13.0 \
+    -framework AppKit \
+    -framework CoreGraphics \
+    scripts/generate_icon.swift \
+    -o /tmp/generate_icon
+/tmp/generate_icon /tmp/AppIcon.iconset
+iconutil -c icns /tmp/AppIcon.iconset -o "${RESOURCES_DIR}/AppIcon.icns"
+rm -rf /tmp/AppIcon.iconset /tmp/generate_icon
+
 cat > "${CONTENTS_DIR}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -52,6 +63,10 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <string>zh_TW</string>
     <key>CFBundleExecutable</key>
     <string>${APP_NAME}</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>com.mactranslator.app</string>
     <key>CFBundleInfoDictionaryVersion</key>
@@ -63,9 +78,9 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
