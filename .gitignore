@@ -6,3 +6,5 @@
 xcuserdata/
 DerivedData/
 MacTranslator.app/
+*.dmg
+*.zip

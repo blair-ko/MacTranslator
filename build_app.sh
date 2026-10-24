@@ -23,8 +23,24 @@ swiftc -O \
     -framework Vision \
     -framework AVFoundation \
     Sources/MacTranslator/*.swift \
-    -o "${MACOS_DIR}/${APP_NAME}"
+    -o "${MACOS_DIR}/${APP_NAME}_arm64"
 
+swiftc -O \
+    -module-cache-path /tmp/swift-module-cache \
+    -target x86_64-apple-macosx13.0 \
+    -framework AppKit \
+    -framework SwiftUI \
+    -framework Carbon \
+    -framework Vision \
+    -framework AVFoundation \
+    Sources/MacTranslator/*.swift \
+    -o "${MACOS_DIR}/${APP_NAME}_x86_64"
+
+lipo -create -output "${MACOS_DIR}/${APP_NAME}" \
+    "${MACOS_DIR}/${APP_NAME}_arm64" \
+    "${MACOS_DIR}/${APP_NAME}_x86_64"
+
+rm -f "${MACOS_DIR}/${APP_NAME}_arm64" "${MACOS_DIR}/${APP_NAME}_x86_64"
 chmod +x "${MACOS_DIR}/${APP_NAME}"
 
 cat > "${CONTENTS_DIR}/Info.plist" <<EOF
@@ -64,3 +80,16 @@ EOF
 codesign --force --deep --sign - "${APP_BUNDLE}" 2>/dev/null || true
 
 echo "✅ 已成功打包：$(pwd)/${APP_BUNDLE}"
+
+# 建立 DMG 磁碟映像檔（內含 MacTranslator.app 與 Applications 捷徑）
+DMG_NAME="${APP_NAME}.dmg"
+DMG_STAGING="/tmp/${APP_NAME}_dmg_staging"
+rm -rf "${DMG_STAGING}" "${DMG_NAME}"
+mkdir -p "${DMG_STAGING}"
+cp -R "${APP_BUNDLE}" "${DMG_STAGING}/"
+ln -s /Applications "${DMG_STAGING}/Applications"
+
+if hdiutil create -volname "${APP_NAME}" -srcfolder "${DMG_STAGING}" -ov -format UDZO "${DMG_NAME}" >/dev/null 2>&1; then
+    echo "💿 已成功建立磁碟映像檔：$(pwd)/${DMG_NAME}"
+fi
+rm -rf "${DMG_STAGING}"
